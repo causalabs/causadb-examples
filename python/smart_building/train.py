@@ -38,3 +38,23 @@ if __name__ == "__main__":
 
     # Print the status of the model
     print("Model status:", model.status())
+
+    # Now create an equivalent non-causal model, where the DAG is a star graph with the outcome, "indoor_temp" as the center node.
+    print("Creating a non-causal model...")
+    non_causal_model = client.create_model(
+        "example-smart-building-non-causal-model")
+    non_causal_model.set_nodes(["hvac", "energy", "indoor_temp"])
+    non_causal_model.set_edges([
+        ("hvac", "indoor_temp"),
+        ("energy", "indoor_temp")
+    ])
+
+    # Re-use the same data
+    non_causal_model.attach("example-smart-building-data")
+
+    # Train the model
+    print("Training the model...")
+    non_causal_model.train()
+
+    # Print the status of the model
+    print("Model status:", non_causal_model.status())

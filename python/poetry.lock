@@ -261,13 +261,13 @@ files = [
 
 [[package]]
 name = "causadb"
-version = "1.0.7"
+version = "1.1.0"
 description = ""
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "causadb-1.0.7-py3-none-any.whl", hash = "sha256:03024e56650784ddafcee8487ad582fd58166a9078b854cad8d8fd15de951c30"},
-    {file = "causadb-1.0.7.tar.gz", hash = "sha256:ca4e11acfe492f6224ac2d6f264983c6fb9e1753ad3f54c03272f5a783a1592e"},
+    {file = "causadb-1.1.0-py3-none-any.whl", hash = "sha256:b3ab1e31720df208ffd5a2099f30548b61f1c5de3f5c1528a229879984deafff"},
+    {file = "causadb-1.1.0.tar.gz", hash = "sha256:a98ba541c5ae02c6bfa3a760656ba387f66708f02592e5d2dab4aacafcc98b83"},
 ]
 
 [package.dependencies]
@@ -3223,4 +3223,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f346b216cb04eb8896dcafc151e4febb272e512f7ff063c662bc31edb3bc735b"
+content-hash = "a79a0092abe2c70fa8903c77edaefbdcc381e07a1e620bfe1ce22d1125b5174e"
