@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # Create a model
     print("Creating a model...")
-    model = client.create_model("example-smart-building-model")
+    model = client.create_model("example-smart-building-causal-model")
 
     # Configure the model
     print("Configuring the model...")
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     print("Uploading data...")
     client \
         .add_data("example-smart-building-data") \
-        .from_csv("smart_building/data.csv")
+        .from_csv("data.csv")
     model.attach("example-smart-building-data")
 
     # Train the model

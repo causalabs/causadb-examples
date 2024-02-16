@@ -40,4 +40,4 @@ if __name__ == "__main__":
     # Remove any negative values of energy
     df = df[df["energy"] > 0]
 
-    df.to_csv("smart_building/data.csv", index=False)
+    df.to_csv("data.csv", index=False)

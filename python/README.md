@@ -22,12 +22,4 @@ cp .env.example .env
 
 Then, open the `.env` file and set the `CAUSADB_TOKEN` variable to your token.
 
-Now you can run the examples with:
-
-```bash
-poetry run python examples/01_create_and_query.py
-```
-
-## Examples
-
-- [01_create_and_query.py](examples/01_create_and_query.py): Create a new CausaDB database and query it.
+Now you can run the examples.
