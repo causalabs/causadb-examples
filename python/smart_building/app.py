@@ -20,7 +20,7 @@ def load_resources():
     causal_model = client.get_model("example-smart-building-causal-model")
     non_causal_model = client.get_model(
         "example-smart-building-non-causal-model")
-    df = pd.read_csv("data.csv")
+    df = pd.read_csv("python/smart_building/data.csv")
     return client, causal_model, non_causal_model, df
 
 
