@@ -113,7 +113,7 @@ fig.update_layout(
     plot_bgcolor=background_color,   # Background color for the plotting area
     xaxis_title="Days",  # X-axis label
     yaxis_title="Achieved Temperature (\u00b0C)",  # Y-axis label
-    font=dict(family="DM Sans", size=22, color="white"),  # Set the font here
+    font=dict(family="Helvetica", size=22, color="white"),  # Set the font here
     # Increase X-axis label size
     xaxis=dict(showgrid=False),
     # Increase Y-axis label size
