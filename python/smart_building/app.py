@@ -39,7 +39,18 @@ st.markdown("""
 This example demonstrates the use of causal AI in optimising the HVAC (Heating, Ventilation, and Air Conditioning) settings in a smart building. In large spaces, pre-heating and pre-cooling can be used to maintain a comfortable indoor temperature while minimising energy consumption. This is challenging because effective control of HVAC settings requires accurate estimates of the future indoor temperature.
 
 Standard AI methods for controlling HVAC settings rely on correlations in historical data. These methods fail to make optimal decisions when the underlying data distribution changes, such as when the HVAC settings are changed. On the other hand, causal AI algorithms capture the cause-effect relationships between variables, which allows it to make accurate predictions and optimal decisions even under changing conditions. 
+""")
 
+# Expander with an image of the DAG for the causal model
+with st.expander("Building a Causal Model with CausaDB"):
+    st.markdown("""
+    CausaDB is designed to make it easy to build and train causal models. An important part of this process is to define a **causal graph** - a graph that captures the cause-effect relationships between variables in the system. Causal graphs and associated code can be easily built in the CausaDB model builder, shown below.
+                
+    Check out the full training code in the [Github repo](https://github.com/causalabs/causadb-examples/blob/main/python/smart_building/train.py).
+    """)
+    st.image(os.path.join(os.path.dirname(__file__), "images/model_builder.png"))
+
+st.markdown("""
 In this example, we compare the performance of a causal AI model built with CausaDB against a standard AI model in controlling the HVAC settings to maintain a target indoor temperature.
             
 Use the slider below to set a target indoor temperature, and see how the two models perform in achieving the target temperature for simulations over a year.
@@ -65,8 +76,10 @@ temps_causal = simulate_hvac(df, causal_model_hvac)[
 temps_non_causal = simulate_hvac(df, non_causal_model_hvac)[
     "indoor_temp"]
 
+# '#15A07B',
+
 # Plot the expected and achieved temperatures over the first 365 days
-colors = ['#15A07B', '#15C7B8']
+colors = ['#15C7B8',  '#B13CA0']
 background_color = '#1b1917'  # Replace with your desired background color
 
 fig = go.Figure()
@@ -192,5 +205,7 @@ st.table({
 st.subheader("Conclusion")
 
 st.markdown("""
-In this example we've demonstrated how a causal model built with CausaDB vastly outperforms an equivalent standard AI model for controlling building temperature. Using causal AI is the only way to avoid costly mistakes with causal AI to build truly trustworthy and effective AI models. If you'd like to learn more about CausaDB, visit [causa.tech](https://causa.tech).
+In this example we've demonstrated how a causal model built with CausaDB vastly outperforms an equivalent standard AI model for controlling building temperature. Using causal AI is the only way to avoid costly mistakes with standard AI, and to build truly trustworthy and effective AI models. If you'd like to learn more about CausaDB, visit [causa.tech](https://causa.tech).
+
+Check out the [Github repo](https://github.com/causalabs/causadb-examples/blob/main/python/smart_building/README.md) to start building your own causal AI models with CausaDB.            
 """)
