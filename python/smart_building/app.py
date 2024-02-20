@@ -20,22 +20,29 @@ def load_resources():
     causal_model = client.get_model("example-smart-building-causal-model")
     non_causal_model = client.get_model(
         "example-smart-building-non-causal-model")
-    df = pd.read_csv("python/smart_building/data.csv")
+    filepath = os.path.join(os.path.dirname(__file__), "data.csv")
+    df = pd.read_csv(filepath)
     return client, causal_model, non_causal_model, df
 
 
 client, causal_model, non_causal_model, df = load_resources()
 
 # Set title of the app
-st.title("CausaDB Smart Building Example App")
+st.title("Smart Building Optimisation with CausaDB")
+
+st.markdown("""
+This example demonstrates the use of causal AI in optimising the HVAC (Heating, Ventilation, and Air Conditioning) settings in a smart building. In large spaces, pre-heating and pre-cooling can be used to maintain a comfortable indoor temperature while minimising energy consumption. This is challenging because effective control of HVAC settings requires accurate estimates of the future indoor temperature.
+
+Standard AI methods for controlling HVAC settings rely on correlations in historical data. These methods fail to make optimal decisions when the underlying data distribution changes, such as when the HVAC settings are changed. On the other hand, causal AI algorithms capture the cause-effect relationships between variables, which allows it to make accurate predictions and optimal decisions even under changing conditions. 
+
+In this example, we compare the performance of a causal AI model built with CausaDB against a standard AI model in controlling the HVAC settings to maintain a target indoor temperature.
+            
+Use the slider below to set a target indoor temperature, and see how the two models perform in achieving the target temperature for simulations over a year.
+""")
 
 # Add a slider to control the HVAC setting.
 target_temp = st.slider(
-    "Target Building Temperature (\u00b0C)", 17.0, 19.0, 18.0, 0.1)
-
-# Let users specify the SQM size of their building
-building_size = st.number_input(
-    "Enter the size of your building in square meters", min_value=100, value=1000, step=100)
+    "Target Building Temperature (\u00b0C)", 16.0, 20.0, 18.0, 0.1)
 
 causal_model_hvac = causal_model.optimal_actions(
     {"indoor_temp": target_temp}, ["hvac"])["hvac"]
@@ -87,7 +94,7 @@ fig.update_layout(
     paper_bgcolor=background_color,  # Background color for the whole figure
     plot_bgcolor=background_color,   # Background color for the plotting area
     xaxis_title="Days",  # X-axis label
-    yaxis_title="Temperature (\u00b0C)",  # Y-axis label
+    yaxis_title="Achieved Temperature (\u00b0C)",  # Y-axis label
     font=dict(family="DM Sans", size=22, color="white"),  # Set the font here
     # Increase X-axis label size
     xaxis=dict(showgrid=False),
@@ -98,9 +105,13 @@ fig.update_layout(
 # Show plot
 st.plotly_chart(fig)
 
-
 # Display the optimal HVAC setting in a table
 st.subheader("Optimal HVAC Setting")
+
+st.markdown("""
+These are the optimal HVAC settings the two models believe will achieve the target indoor temperature. These are the actionable outputs that the algorithms provide to control the HVAC settings.
+""")
+
 st.table({
     "Model": ["Causal Model", "Standard AI"],
     "HVAC Setting": [round(causal_model_hvac), round(non_causal_model_hvac)]
@@ -109,11 +120,28 @@ st.table({
 
 # Display the expected and achieved temperatures in a table
 st.subheader("Expected and Achieved Temperatures")
+
+st.markdown("""
+These are the average expected and achieved indoor temperatures over a year in the simulated dataset. The expected temperature is the average indoor temperature that the models predict will be achieved by using the optimal HVAC settings. The achieved temperature is the average indoor temperature that is actually achieved by using the optimal HVAC settings.
+""")
+
 st.table({
     "Model": ["Causal Model", "Standard AI"],
     "Expected Avg. Temperature": [causal_model_temp_expected, non_causal_model_temp_expected],
-    "Achieved Avg. Temperature": [temps_causal.mean(), temps_non_causal.mean()]
+    "Achieved Avg. Temperature": [temps_causal.mean(), temps_non_causal.mean()],
+    "Deviation": [abs(temps_causal.mean() - target_temp), abs(temps_non_causal.mean() - target_temp)]
 })
+
+# Display the annual wastage in a table
+st.subheader("Estimated Annual Wastage (£)")
+
+st.markdown("""
+Using the size of the building in SQM, you can compare how much energy is wasted from the two algorithms over the course of a year.
+""")
+
+# Let users specify the SQM size of their building
+building_size = st.number_input(
+    "Enter the size of your building in square meters", min_value=100, value=1000, step=100)
 
 # Run a quick cost model to see how much is wasted per year and what that will cost.
 # Assume cost per square meter per degree difference from target temperature
@@ -127,14 +155,37 @@ causal_model_cost = (total_deviation_causal *
 non_causal_model_cost = (total_deviation_non_causal *
                          building_size * cost_per_sqm_per_degree) * 365
 
-# Display the annual wastage in a table
-st.subheader("Annual Wastage Cost (£)")
+# Create bar chart
+fig2 = go.Figure()
+
+fig2.add_trace(go.Bar(
+    x=["Causal AI", "Standard AI"],
+    y=[causal_model_cost, non_causal_model_cost],
+    marker_color=colors
+))
+
+# Update axes properties
+fig2.update_layout(
+    template='plotly_dark',
+    paper_bgcolor=background_color,  # Background color for the whole figure
+    plot_bgcolor=background_color,   # Background color for the plotting area
+    xaxis_title="Model",  # X-axis label
+    yaxis_title="Annual Wastage (£)",  # Y-axis label
+    font=dict(family="DM Sans", size=22, color="white"),  # Set the font here
+    xaxis=dict(showgrid=False),  # Increase X-axis label size
+    yaxis=dict(showgrid=True),   # Increase Y-axis label size
+)
+
+# Show plot
+st.plotly_chart(fig2)
+
 st.table({
-    "Model": ["Causal Model", "Standard AI"],
-    "Annual Cost": [round(causal_model_cost, 2), round(non_causal_model_cost, 2)]
+    "Model": ["Causal AI", "Standard AI", "CausaDB Savings"],
+    "Annual Wastage": [f'£{causal_model_cost:,.2f}', f'£{non_causal_model_cost:,.2f}', f'£{(non_causal_model_cost - causal_model_cost):,.2f}']
 })
 
-# Show the difference in cost between the two models.
-cost_difference = non_causal_model_cost - causal_model_cost
-st.subheader("Annual Savings with Causal Model")
-st.write(f"£{round(cost_difference, 2)}")
+st.subheader("Conclusion")
+
+st.markdown("""
+In this example we've demonstrated how a causal model built with CausaDB vastly outperforms an equivalent standard AI model for controlling building temperature. Using causal AI is the only way to avoid costly mistakes with causal AI to build truly trustworthy and effective AI models. If you'd like to learn more about CausaDB, visit [causa.tech](https://causa.tech).
+""")

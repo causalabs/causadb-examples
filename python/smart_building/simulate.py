@@ -5,8 +5,8 @@ np.random.seed(0)
 
 
 def simulate_hvac(df, hvac):
-    indoor_temp = 24 - 0.1 * hvac + \
-        np.random.normal(0, 0.01, len(df))
+    indoor_temp = 26 - 0.11 * hvac + \
+        np.random.normal(0, 0.1, len(df))
     energy = 200 + 2 * hvac + 10 * indoor_temp + \
         np.random.normal(0, 0.01, len(df))
 
@@ -21,9 +21,9 @@ if __name__ == "__main__":
     num_samples = 1000
 
     # Generate data
-    hvac = np.random.normal(50, 7.5, num_samples)
-    indoor_temp = 24 - 0.1 * hvac + \
-        np.random.normal(0, 0.01, num_samples)
+    hvac = np.random.normal(50, 12.5, num_samples)
+    indoor_temp = 26 - 0.11 * hvac + \
+        np.random.normal(0, 0.1, num_samples)
     energy = 200 + 2 * hvac + 10 * indoor_temp + \
         np.random.normal(0, 0.01, num_samples)
 
