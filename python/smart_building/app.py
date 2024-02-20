@@ -2,14 +2,19 @@ import os
 from simulate import simulate_hvac
 import pandas as pd
 import matplotlib.pyplot as plt
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from causadb import CausaDB
 import streamlit as st
 import time
 import plotly.graph_objects as go
 
+st.set_page_config(
+    page_title="CausaDB Smart Building Optimisation",
+    page_icon=":thermometer:"
+)
+
 # Load the environment variables from .env
-load_dotenv()
+load_dotenv(find_dotenv())
 CAUSADB_TOKEN = os.getenv("CAUSADB_TOKEN")
 
 
