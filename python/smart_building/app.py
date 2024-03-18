@@ -8,6 +8,7 @@ import streamlit as st
 import time
 import plotly.graph_objects as go
 
+
 st.set_page_config(
     page_title="CausaDB Smart Building Optimisation",
     page_icon=":thermometer:"
@@ -16,6 +17,9 @@ st.set_page_config(
 # Load the environment variables from .env
 load_dotenv(find_dotenv())
 CAUSADB_TOKEN = os.getenv("CAUSADB_TOKEN")
+
+st.image(os.path.join(os.path.dirname(
+    __file__), "images/logo.svg"), width=200)
 
 
 @st.cache_resource
@@ -208,4 +212,10 @@ st.markdown("""
 In this example we've demonstrated how a causal model built with CausaDB vastly outperforms an equivalent standard AI model for controlling building temperature. Using causal AI is the only way to avoid costly mistakes with standard AI, and to build truly trustworthy and effective AI models. If you'd like to learn more about CausaDB, visit [causa.tech](https://causa.tech).
 
 Check out the [Github repo](https://github.com/causalabs/causadb-examples/blob/main/python/smart_building/README.md) to start building your own causal AI models with CausaDB.            
+""")
+
+
+# Add copyright footer
+st.markdown("""
+© 2024 Causa Ltd. All rights reserved.
 """)
