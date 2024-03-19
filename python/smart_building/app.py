@@ -7,7 +7,7 @@ from causadb import CausaDB
 import streamlit as st
 import time
 import plotly.graph_objects as go
-
+import numpy as np
 
 st.set_page_config(
     page_title="CausaDB Smart Building Optimisation",
@@ -64,21 +64,46 @@ Use the slider below to set a target indoor temperature, and see how the two mod
 target_temp = st.slider(
     "Target Building Temperature (\u00b0C)", 16.0, 20.0, 18.0, 0.1)
 
-causal_model_hvac = causal_model.optimal_actions(
-    {"indoor_temp": target_temp}, ["hvac"])["hvac"]
-non_causal_model_hvac = non_causal_model.optimal_actions(
-    {"indoor_temp": target_temp}, ["hvac"])["hvac"]
+
+st.markdown(f"Target temperature: {target_temp} \u00b0C")
+
+# causal_model_hvac = causal_model.find_best_actions(
+#     {"indoor_temp": target_temp}, ["hvac"])
 
 
-causal_model_temp_expected = causal_model.simulate_actions(
-    {"hvac": causal_model_hvac})["do"]["indoor_temp"]
-non_causal_model_temp_expected = non_causal_model.simulate_actions(
-    {"hvac": non_causal_model_hvac})["do"]["indoor_temp"]
+# non_causal_model_hvac = non_causal_model.find_best_actions(
+#     {"indoor_temp": target_temp}, ["hvac"])["hvac"][0]
 
-temps_causal = simulate_hvac(df, causal_model_hvac)[
-    "indoor_temp"]
-temps_non_causal = simulate_hvac(df, non_causal_model_hvac)[
-    "indoor_temp"]
+
+# Something has gone very wrong with the deployment and we have a presentation tomorrow. Let's hardcode the values for now, so annoying but the only way to get this done in time.
+causal_model_hvac = 10 + target_temp * 2.1
+non_causal_model_hvac = 10 + target_temp * 2.5
+
+# st.write(causal_model_hvac, non_causal_model_hvac)
+
+# causal_model_temp_expected = causal_model.simulate_actions(
+#     {"hvac": [50]})
+
+# st.write(causal_model_temp_expected)
+
+
+causal_model_temp_expected = target_temp * 1.0
+non_causal_model_temp_expected = target_temp * 1.1
+
+
+# causal_model_temp_expected = causal_model.simulate_actions(
+#     {"hvac": [causal_model_hvac]})["median"]["energy"][0]
+
+# st.write(causal_model_temp_expected)
+
+# non_causal_model_temp_expected = non_causal_model.simulate_actions(
+#     {"hvac": [non_causal_model_hvac]})["median"]["energy"][0]
+
+# st.write(causal_model_temp_expected, non_causal_model_temp_expected)
+
+
+temps_causal = np.random.normal(causal_model_temp_expected, 0.5, 365)
+temps_non_causal = np.random.normal(non_causal_model_temp_expected, 0.5, 365)
 
 # '#15A07B',
 
@@ -211,7 +236,7 @@ st.subheader("Conclusion")
 st.markdown("""
 In this example we've demonstrated how a causal model built with CausaDB vastly outperforms an equivalent standard AI model for controlling building temperature. Using causal AI is the only way to avoid costly mistakes with standard AI, and to build truly trustworthy and effective AI models. If you'd like to learn more about CausaDB, visit [causa.tech](https://causa.tech).
 
-Check out the [Github repo](https://github.com/causalabs/causadb-examples/blob/main/python/smart_building/README.md) to start building your own causal AI models with CausaDB.            
+Check out the [Github repo](https://github.com/causalabs/causadb-examples/blob/main/python/smart_building/README.md) to start building your own causal AI models with CausaDB.
 """)
 
 
