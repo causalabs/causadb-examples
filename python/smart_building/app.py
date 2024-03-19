@@ -88,7 +88,7 @@ non_causal_model_hvac = 10 + target_temp * 2.5
 
 
 causal_model_temp_expected = target_temp * 1.0
-non_causal_model_temp_expected = target_temp * 1.1
+non_causal_model_temp_expected = target_temp * 1.05
 
 
 # causal_model_temp_expected = causal_model.simulate_actions(
@@ -102,7 +102,7 @@ non_causal_model_temp_expected = target_temp * 1.1
 # st.write(causal_model_temp_expected, non_causal_model_temp_expected)
 
 
-temps_causal = np.random.normal(causal_model_temp_expected, 0.5, 365)
+temps_causal = np.random.normal(causal_model_temp_expected, 0.2, 365)
 temps_non_causal = np.random.normal(non_causal_model_temp_expected, 0.5, 365)
 
 # '#15A07B',
