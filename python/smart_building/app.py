@@ -1,5 +1,5 @@
 import os
-from simulate import simulate_hvac
+from simulate import set_heating, calculate_wasted_heating_cost
 import pandas as pd
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv, find_dotenv
@@ -8,6 +8,7 @@ import streamlit as st
 import time
 import plotly.graph_objects as go
 import numpy as np
+import xgboost as xgb
 
 st.set_page_config(
     page_title="CausaDB Smart Building Optimisation",
@@ -24,17 +25,22 @@ st.image(os.path.join(os.path.dirname(
 
 @st.cache_resource
 def load_resources():
-    client = CausaDB()
-    client.set_token("test-token-id", CAUSADB_TOKEN)
-    causal_model = client.get_model("example-smart-building-causal-model")
-    non_causal_model = client.get_model(
-        "example-smart-building-non-causal-model")
-    filepath = os.path.join(os.path.dirname(__file__), "data.csv")
+    client = CausaDB(CAUSADB_TOKEN)
+    causal_model = client.get_model("example-heating-model")
+    filepath = os.path.join(os.path.dirname(__file__),
+                            "example_heating_data.csv")
     df = pd.read_csv(filepath)
-    return client, causal_model, non_causal_model, df
+
+    X = df[['outdoor_temp', 'indoor_temp']].values
+    y = df['heating'].values
+
+    xgb_model = xgb.XGBRegressor()
+    xgb_model.fit(X, y)
+
+    return client, causal_model, xgb_model, df
 
 
-client, causal_model, non_causal_model, df = load_resources()
+client, causal_model, xgb_model, df = load_resources()
 
 # Set title of the app
 st.title("Smart Building Optimisation with CausaDB")
@@ -64,48 +70,27 @@ Use the slider below to set a target indoor temperature, and see how the two mod
 target_temp = st.slider(
     "Target Building Temperature (\u00b0C)", 16.0, 20.0, 18.0, 0.1)
 
-
 st.markdown(f"Target temperature: {target_temp} \u00b0C")
 
-# causal_model_hvac = causal_model.find_best_actions(
-#     {"indoor_temp": target_temp}, ["hvac"])
+outdoor_temp = st.slider(
+    "Outdoor Temperature (\u00b0C)", 10.0, 20.0, 15.0, 0.1)
 
+st.markdown(f"Outdoor temperature: {outdoor_temp} \u00b0C")
 
-# non_causal_model_hvac = non_causal_model.find_best_actions(
-#     {"indoor_temp": target_temp}, ["hvac"])["hvac"][0]
+best_actions_causal = causal_model.find_best_actions(
+    {"indoor_temp": target_temp},
+    actionable=["heating"],
+    fixed={"outdoor_temp": outdoor_temp}
+)["heating"][0]
 
+best_actions_xgb = xgb_model.predict(
+    np.array([[outdoor_temp, target_temp]]))[0]
 
-# Something has gone very wrong with the deployment and we have a presentation tomorrow. Let's hardcode the values for now, so annoying but the only way to get this done in time.
-causal_model_hvac = 10 + target_temp * 2.1
-non_causal_model_hvac = 10 + target_temp * 2.5
+achieved_temp_causal = set_heating(
+    best_actions_causal, np.repeat(outdoor_temp, 365), noise=True)[0]
 
-# st.write(causal_model_hvac, non_causal_model_hvac)
-
-# causal_model_temp_expected = causal_model.simulate_actions(
-#     {"hvac": [50]})
-
-# st.write(causal_model_temp_expected)
-
-
-causal_model_temp_expected = target_temp * 1.0
-non_causal_model_temp_expected = target_temp * 1.05
-
-
-# causal_model_temp_expected = causal_model.simulate_actions(
-#     {"hvac": [causal_model_hvac]})["median"]["energy"][0]
-
-# st.write(causal_model_temp_expected)
-
-# non_causal_model_temp_expected = non_causal_model.simulate_actions(
-#     {"hvac": [non_causal_model_hvac]})["median"]["energy"][0]
-
-# st.write(causal_model_temp_expected, non_causal_model_temp_expected)
-
-
-temps_causal = np.random.normal(causal_model_temp_expected, 0.2, 365)
-temps_non_causal = np.random.normal(non_causal_model_temp_expected, 0.5, 365)
-
-# '#15A07B',
+achieved_temp_xgb = set_heating(
+    best_actions_xgb, np.repeat(outdoor_temp, 365), noise=True)[0]
 
 # Plot the expected and achieved temperatures over the first 365 days
 colors = ['#15C7B8',  '#B13CA0']
@@ -115,23 +100,14 @@ fig = go.Figure()
 
 # Create line plots
 fig.add_trace(go.Scatter(
-    y=temps_causal[:365], mode='lines', name='Causal Model', line_color=colors[0]))
+    y=achieved_temp_causal[:365], mode='lines', name='Causal Model', line_color=colors[0]))
 fig.add_trace(go.Scatter(
-    y=temps_non_causal[:365], mode='lines', name='Standard AI', line_color=colors[1]))
+    y=achieved_temp_xgb[:365], mode='lines', name='Standard AI', line_color=colors[1]))
 
 # Add target temperature line
 fig.add_shape(type='line',
               x0=0, y0=target_temp, x1=365, y1=target_temp,
               line=dict(color='White', width=2, dash='dash'))
-
-# Add mean temperature line for each model
-fig.add_shape(type='line',
-              x0=0, y0=temps_causal.mean(), x1=365, y1=temps_causal.mean(),
-              line=dict(color=colors[0], width=2, dash='dash'))
-
-fig.add_shape(type='line',
-              x0=0, y0=temps_non_causal.mean(), x1=365, y1=temps_non_causal.mean(),
-              line=dict(color=colors[1], width=2, dash='dash'))
 
 # Update axes properties
 fig.update_layout(
@@ -152,84 +128,143 @@ fig.update_layout(
 # Show plot
 st.plotly_chart(fig)
 
-# Display the optimal HVAC setting in a table
-st.subheader("Optimal HVAC Setting")
+# non_causal_model_hvac = non_causal_model.find_best_actions(
+#     {"indoor_temp": target_temp}, ["hvac"])["hvac"][0]
 
-st.markdown("""
-These are the optimal HVAC settings the two models believe will achieve the target indoor temperature. These are the actionable outputs that the algorithms provide to control the HVAC settings.
-""")
+# causal_model_temp_expected = causal_model.simulate_actions(
+#     {"hvac": [causal_model_hvac]})["median"]["indoor_temp"][0]
 
-st.table({
-    "Model": ["Causal Model", "Standard AI"],
-    "HVAC Setting": [round(causal_model_hvac), round(non_causal_model_hvac)]
-})
+# non_causal_model_temp_expected = non_causal_model.simulate_actions(
+#     {"hvac": [non_causal_model_hvac]})["median"]["indoor_temp"][0]
+
+# temps_causal = simulate_hvac(df, causal_model_hvac)[
+#     "indoor_temp"]
+# temps_non_causal = simulate_hvac(df, non_causal_model_hvac)[
+#     "indoor_temp"]
+
+# # Plot the expected and achieved temperatures over the first 365 days
+# colors = ['#15C7B8',  '#B13CA0']
+# background_color = '#1b1917'  # Replace with your desired background color
+
+# fig = go.Figure()
+
+# # Create line plots
+# fig.add_trace(go.Scatter(
+#     y=temps_causal[:365], mode='lines', name='Causal Model', line_color=colors[0]))
+# fig.add_trace(go.Scatter(
+#     y=temps_non_causal[:365], mode='lines', name='Standard AI', line_color=colors[1]))
+
+# # Add target temperature line
+# fig.add_shape(type='line',
+#               x0=0, y0=target_temp, x1=365, y1=target_temp,
+#               line=dict(color='White', width=2, dash='dash'))
+
+# # Add mean temperature line for each model
+# fig.add_shape(type='line',
+#               x0=0, y0=temps_causal.mean(), x1=365, y1=temps_causal.mean(),
+#               line=dict(color=colors[0], width=2, dash='dash'))
+
+# fig.add_shape(type='line',
+#               x0=0, y0=temps_non_causal.mean(), x1=365, y1=temps_non_causal.mean(),
+#               line=dict(color=colors[1], width=2, dash='dash'))
+
+# # Update axes properties
+# fig.update_layout(
+#     # width=800,
+#     # height=800,
+#     template='plotly_dark',
+#     paper_bgcolor=background_color,  # Background color for the whole figure
+#     plot_bgcolor=background_color,   # Background color for the plotting area
+#     xaxis_title="Days",  # X-axis label
+#     yaxis_title="Achieved Temperature (\u00b0C)",  # Y-axis label
+#     font=dict(family="Helvetica", size=22, color="white"),  # Set the font here
+#     # Increase X-axis label size
+#     xaxis=dict(showgrid=False),
+#     # Increase Y-axis label size
+#     yaxis=dict(showgrid=True),
+# )
+
+# # Show plot
+# st.plotly_chart(fig)
+
+# # Display the optimal HVAC setting in a table
+# st.subheader("Optimal HVAC Setting")
+
+# st.markdown("""
+# These are the optimal HVAC settings the two models believe will achieve the target indoor temperature. These are the actionable outputs that the algorithms provide to control the HVAC settings.
+# """)
+
+# st.table({
+#     "Model": ["Causal Model", "Standard AI"],
+#     "HVAC Setting": [round(causal_model_hvac), round(non_causal_model_hvac)]
+# })
 
 
-# Display the expected and achieved temperatures in a table
-st.subheader("Expected and Achieved Temperatures")
+# # Display the expected and achieved temperatures in a table
+# st.subheader("Expected and Achieved Temperatures")
 
-st.markdown("""
-These are the average expected and achieved indoor temperatures over a year in the simulated dataset. The expected temperature is the average indoor temperature that the models predict will be achieved by using the optimal HVAC settings. The achieved temperature is the average indoor temperature that is actually achieved by using the optimal HVAC settings.
-""")
+# st.markdown("""
+# These are the average expected and achieved indoor temperatures over a year in the simulated dataset. The expected temperature is the average indoor temperature that the models predict will be achieved by using the optimal HVAC settings. The achieved temperature is the average indoor temperature that is actually achieved by using the optimal HVAC settings.
+# """)
 
-st.table({
-    "Model": ["Causal Model", "Standard AI"],
-    "Expected Avg. Temperature": [causal_model_temp_expected, non_causal_model_temp_expected],
-    "Achieved Avg. Temperature": [temps_causal.mean(), temps_non_causal.mean()],
-    "Deviation": [abs(temps_causal.mean() - target_temp), abs(temps_non_causal.mean() - target_temp)]
-})
+# st.table({
+#     "Model": ["Causal Model", "Standard AI"],
+#     "Expected Avg. Temperature": [causal_model_temp_expected, non_causal_model_temp_expected],
+#     "Achieved Avg. Temperature": [temps_causal.mean(), temps_non_causal.mean()],
+#     "Deviation": [abs(temps_causal.mean() - target_temp), abs(temps_non_causal.mean() - target_temp)]
+# })
 
-# Display the annual wastage in a table
-st.subheader("Estimated Annual Wastage (£)")
+# # Display the annual wastage in a table
+# st.subheader("Estimated Annual Wastage (£)")
 
-st.markdown("""
-Using the size of the building in SQM, you can compare how much energy is wasted from the two algorithms over the course of a year.
-""")
+# st.markdown("""
+# Using the size of the building in SQM, you can compare how much energy is wasted from the two algorithms over the course of a year.
+# """)
 
-# Let users specify the SQM size of their building
-building_size = st.number_input(
-    "Enter the size of your building in square meters", min_value=100, value=1000, step=100)
+# # Let users specify the SQM size of their building
+# building_size = st.number_input(
+#     "Enter the size of your building in square meters", min_value=100, value=1000, step=100)
 
-# Run a quick cost model to see how much is wasted per year and what that will cost.
-# Assume cost per square meter per degree difference from target temperature
-cost_per_sqm_per_degree = 0.4  # This is a placeholder, replace with actual cost
+# # Run a quick cost model to see how much is wasted per year and what that will cost.
+# # Assume cost per square meter per degree difference from target temperature
+# cost_per_sqm_per_degree = 0.4  # This is a placeholder, replace with actual cost
 
-total_deviation_causal = abs(temps_causal.mean() - target_temp)
-total_deviation_non_causal = abs(temps_non_causal.mean() - target_temp)
+# total_deviation_causal = abs(temps_causal.mean() - target_temp)
+# total_deviation_non_causal = abs(temps_non_causal.mean() - target_temp)
 
-causal_model_cost = (total_deviation_causal *
-                     building_size * cost_per_sqm_per_degree) * 365
-non_causal_model_cost = (total_deviation_non_causal *
-                         building_size * cost_per_sqm_per_degree) * 365
+# causal_model_cost = (total_deviation_causal *
+#                      building_size * cost_per_sqm_per_degree) * 365
+# non_causal_model_cost = (total_deviation_non_causal *
+#                          building_size * cost_per_sqm_per_degree) * 365
 
-# Create bar chart
-fig2 = go.Figure()
+# # Create bar chart
+# fig2 = go.Figure()
 
-fig2.add_trace(go.Bar(
-    x=["Causal AI", "Standard AI"],
-    y=[causal_model_cost, non_causal_model_cost],
-    marker_color=colors
-))
+# fig2.add_trace(go.Bar(
+#     x=["Causal AI", "Standard AI"],
+#     y=[causal_model_cost, non_causal_model_cost],
+#     marker_color=colors
+# ))
 
-# Update axes properties
-fig2.update_layout(
-    template='plotly_dark',
-    paper_bgcolor=background_color,  # Background color for the whole figure
-    plot_bgcolor=background_color,   # Background color for the plotting area
-    xaxis_title="Model",  # X-axis label
-    yaxis_title="Annual Wastage (£)",  # Y-axis label
-    font=dict(family="DM Sans", size=22, color="white"),  # Set the font here
-    xaxis=dict(showgrid=False),  # Increase X-axis label size
-    yaxis=dict(showgrid=True),   # Increase Y-axis label size
-)
+# # Update axes properties
+# fig2.update_layout(
+#     template='plotly_dark',
+#     paper_bgcolor=background_color,  # Background color for the whole figure
+#     plot_bgcolor=background_color,   # Background color for the plotting area
+#     xaxis_title="Model",  # X-axis label
+#     yaxis_title="Annual Wastage (£)",  # Y-axis label
+#     font=dict(family="DM Sans", size=22, color="white"),  # Set the font here
+#     xaxis=dict(showgrid=False),  # Increase X-axis label size
+#     yaxis=dict(showgrid=True),   # Increase Y-axis label size
+# )
 
-# Show plot
-st.plotly_chart(fig2)
+# # Show plot
+# st.plotly_chart(fig2)
 
-st.table({
-    "Model": ["Causal AI", "Standard AI", "CausaDB Savings"],
-    "Annual Wastage": [f'£{causal_model_cost:,.2f}', f'£{non_causal_model_cost:,.2f}', f'£{(non_causal_model_cost - causal_model_cost):,.2f}']
-})
+# st.table({
+#     "Model": ["Causal AI", "Standard AI", "CausaDB Savings"],
+#     "Annual Wastage": [f'£{causal_model_cost:,.2f}', f'£{non_causal_model_cost:,.2f}', f'£{(non_causal_model_cost - causal_model_cost):,.2f}']
+# })
 
 st.subheader("Conclusion")
 
