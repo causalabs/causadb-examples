@@ -1,11 +1,9 @@
 import os
 from simulate import set_heating, calculate_wasted_heating_cost
 import pandas as pd
-import matplotlib.pyplot as plt
 from dotenv import load_dotenv, find_dotenv
 from causadb import CausaDB
 import streamlit as st
-import time
 import plotly.graph_objects as go
 import numpy as np
 import xgboost as xgb
