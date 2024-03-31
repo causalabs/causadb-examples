@@ -16,6 +16,12 @@ Navigate into the root of the `smart_building` directory and run the following c
 poetry install
 ```
 
+Then create a `.env` file by copying the `.env.example` file and enter your CausaDB API key:
+
+```bash
+cp .env.example .env
+```
+
 ## Commands
 
 Run simulations to generate data:
