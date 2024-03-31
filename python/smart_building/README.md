@@ -27,3 +27,7 @@ Run the Streamlit app:
 ```bash
 poetry run streamlit run app.py
 ```
+
+## Live Demo
+
+A live demo of the Streamlit app can be found at [causadb-examples-smart-building.streamlit.app](https://causadb-examples-smart-building.streamlit.app/).
