@@ -27,7 +27,7 @@ def calculate_wasted_heating_cost(indoor_temp, target_temp, volume=50000, insula
     # Daily heating cost
     heating_cost_daily = heating_power * 24 * 0.20  # 20p per kWh (cheap)
     heating_cost_total = np.mean(heating_cost_daily) * 365
-    return heating_cost_total, heating_cost_daily
+    return heating_cost_total, heating_cost_daily, heating_power
 
 
 if __name__ == "__main__":
