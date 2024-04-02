@@ -148,7 +148,7 @@ cost_causadb, cost_causadb_daily, power_causadb_daily = calculate_wasted_heating
 # Create a bar plot to visualize the costs
 fig = go.Figure(data=[
     go.Bar(name='Human', x=['Original', 'XGB', 'CausaDB'], y=[
-           cost_original, cost_xgb, cost_causadb], marker_color=[colors[2], colors[0], colors[1]]),
+           cost_original, cost_xgb, cost_causadb], marker_color=[colors[2], colors[1], colors[0]]),
 ])
 
 # Change the bar mode
