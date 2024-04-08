@@ -1,5 +1,5 @@
 import os
-from simulate import set_heating, calculate_wasted_heating_cost
+from causadb.examples.heating import set_heating, calculate_wasted_heating_cost
 import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 from causadb import CausaDB
