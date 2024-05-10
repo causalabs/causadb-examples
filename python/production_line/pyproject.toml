@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "production-line"
+version = "0.1.0"
+description = ""
+authors = ["JHart96 <jordan.da.hart@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+jupyter = "^1.0.0"
+causadb = {path = "../../../causadb-python", develop = true}
+causacore = {path = "../../../causadb-server/server/causacore"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
