@@ -11,6 +11,8 @@ python = ">=3.10,<3.13"
 jupyter = "^1.0.0"
 causadb = {path = "../../../causadb-python", develop = true}
 causacore = {path = "../../../causadb-server/server/causacore"}
+shap = "^0.45.1"
+xgboost = "^2.0.3"
 
 [build-system]
 requires = ["poetry-core"]
